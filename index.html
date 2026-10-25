@@ -4,7 +4,7 @@
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="キリル文字圏6か国とタイ・ギリシャ・韓国の県名や代表地名を、日本語の声で読もう。GeoGuessr向け音声回答トレーナー。">
   <meta name="theme-color" content="#254f42"><title>GeoLanguage Voice Quiz — 声で読む、世界の地名</title>
-  <link rel="stylesheet" href="style.css"><script type="module" src="app.js"></script>
+  <link rel="stylesheet" href="style.css?v=1.2.0"><script type="module" src="app.js?v=1.2.0"></script>
 </head>
 <body>
 <div class="shell">
@@ -20,10 +20,19 @@
         <div class="step-title spaced"><span>02</span><h2>練習を選ぶ</h2></div>
         <div class="settings"><label>出題内容<select id="mode"><option value="regions">県・行政地域名を読む</option><option value="cities">代表的な都市名を読む</option><option value="mixed">地域優先ミックス</option></select></label><label>問題数<select id="count"><option value="5">5問</option><option value="10" selected>10問</option><option value="20">20問</option><option value="all">全問</option></select></label></div>
         <p id="coverage" class="muted"></p><div class="start-row"><button id="start" class="primary">地名を読む練習をはじめる <span aria-hidden="true">↗</span></button><button id="review-start" class="secondary">苦手な地名を復習</button></div>
-        <p id="review-stock" class="muted"></p>
+        <p id="review-stock" class="muted"></p><div class="mic-setup-link"><button id="setup-mic-check" class="secondary">マイクの確認・設定</button><span class="muted">マイクだけを試す専用ステージです。いつでも任意で確認できます。</span></div>
       </div>
       <div class="how"><div><b>01 / 見る</b><p>県や都市の現地表記が出題。</p></div><div><b>02 / 声で答える</b><p>マイクを押して、日本語の地名を。</p></div><div><b>03 / 身につける</b><p>間違えた地名は、あとで復習。</p></div></div>
       <details class="info"><summary>表記ゆれ・音声認識について</summary><p>「ピエリア」「ぴえりあ」、空白や中黒は同じ答えとして扱います。「釜山」「プサン」などの漢字・別名や、県・州などの省略は問題ごとの登録で対応します。似た音や長音を一律に同じにせず、登録した読みと完全一致で判定します。</p><p>Chromeを想定しています。音声認識にはネット接続とマイクの許可が必要です。音声がブラウザー提供元の認識サービスに送信される場合があります。このアプリは音声や認識全文を保存しません。聞き取り違いは再挑戦できます。</p><p>行政区分の名称・範囲は国ごとに異なります。旧称を含む問題には説明を付けています。日本語の読みは学習用のカナ表記です。</p></details>
+    </section>
+    <section id="mic-check" hidden aria-labelledby="mic-check-heading" tabindex="-1">
+      <div class="game-top"><button id="check-back" class="text-button">← 戻る</button><span class="pill">MIC CHECK</span></div>
+      <h1 id="mic-check-heading" class="check-heading">声が届くか、<br>確認しよう。</h1><p class="muted">日本語の声で答える準備です。この確認は成績に入りません。</p>
+      <div class="check-summary" aria-label="マイクの確認状況"><div><span>マイクの許可</span><strong id="check-permission">未確認</strong></div><div><span>入力の反応</span><strong id="check-signal">未確認</strong></div><div><span>日本語の認識</span><strong id="check-recognized">未確認</strong></div></div>
+      <div class="setup-card check-card"><div class="step-title"><span>01</span><h2>マイクの入力を確認</h2></div><p class="muted">ボタンを押し、許可の案内が出たらマイクを許可してください。声に合わせてバーが動くか確認します。</p><p class="device-label">確認しているマイク：<strong id="check-device">未確認</strong></p><progress id="check-level" class="input-level" max="100" value="0" aria-label="マイク入力の大きさ"></progress><p class="muted">小さい声 <span aria-hidden="true">────────</span> 大きい声</p><button id="check-input" class="secondary">マイクの許可と入力を確認</button></div>
+      <div class="setup-card check-card"><div class="step-title"><span>02</span><h2>日本語の聞き取りを確認</h2></div><p>「<strong>マイクのテストです</strong>」と話してください。</p><button id="check-speech" class="primary">日本語の聞き取りを試す</button><p id="check-interim" class="interim" aria-live="off"></p><div id="check-result" class="recognition" hidden><span class="muted">聞き取った言葉</span><p id="check-transcript"></p><p class="muted">話した内容と合っていれば、下のボタンで進めます。</p></div></div>
+      <p id="check-status" class="check-status" role="status" aria-live="polite"></p><div class="start-row"><button id="check-continue" class="primary" disabled>確認OK・設定に戻る</button><button id="check-skip" class="text-button">確認を終えて設定に戻る</button></div>
+      <details class="info check-help"><summary>動かないとき・使うマイクを変えたいとき</summary><p>ブラウザーのサイト設定でマイクの許可と入力機器を確認してください。Windowsでは「設定 → システム → サウンド → 入力」も確認できます。マイクを変更したら、もう一度入力と聞き取りを試してください。</p><p>音量バーが動いても認識結果が出ない場合は、ネット接続とChromeでの動作を確認してください。聞き取りにはブラウザーの音声認識サービスを使います。</p><p>音量の確認はこの端末内で行い、アプリは録音ファイルを作成・保存しません。聞き取り確認では、音声がブラウザー提供元のサービスへ送られる場合があります。</p></details>
     </section>
     <section id="game" hidden aria-labelledby="question-heading">
       <div class="game-top"><button id="home" class="text-button">← 設定へ</button><span id="context" class="pill"></span><span id="progress-label"></span></div>

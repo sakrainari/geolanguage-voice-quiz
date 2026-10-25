@@ -8,8 +8,8 @@ const messages = {
 };
 
 export class VoiceInput {
-  constructor({ Recognition, onStatus, onInterim, onFinal, timeoutMs = 15000 }) {
-    Object.assign(this, { Recognition, onStatus, onInterim, onFinal, timeoutMs });
+  constructor({ Recognition, onStatus, onInterim, onFinal, timeoutMs = 15000, listeningMessage = '聞いています。日本語の地名で答えてください。' }) {
+    Object.assign(this, { Recognition, onStatus, onInterim, onFinal, timeoutMs, listeningMessage });
     this.generation = 0;
     this.active = null;
   }
@@ -32,7 +32,7 @@ export class VoiceInput {
     recognition.continuous = false;
     recognition.maxAlternatives = 1;
     const current = () => generation === this.generation && this.active === recognition;
-    recognition.onstart = () => { if (current()) this.onStatus('聞いています。日本語の地名で答えてください。', true); };
+    recognition.onstart = () => { if (current()) this.onStatus(this.listeningMessage, true); };
     recognition.onresult = event => {
       if (!current()) return;
       let interim = '';

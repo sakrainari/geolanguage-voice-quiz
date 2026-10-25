@@ -28,21 +28,41 @@ test('実アプリを通して国選択・音声判定・成績・復習・地�
     abort(){this.onend?.();}
     emit(text,isFinal=true){this.onresult({resultIndex:0,results:[Object.assign([{transcript:text}],{isFinal})]});}
   }
-  globalThis.document={getElementById:get,createElement:()=>new Element(),addEventListener(){}};
+  const documentEvents=new Map();
+  globalThis.document={getElementById:get,createElement:()=>new Element(),addEventListener:(name,handler)=>documentEvents.set(name,handler)};
   globalThis.window={isSecureContext:true,SpeechRecognition:Recognition,localStorage:{getItem:key=>saved.get(key)??null,setItem:(key,value)=>saved.set(key,value)},scrollTo(){},addEventListener(){}};
   await import('../app.js');
   assert.equal(get('languages').children.length,4);
   assert.equal(get('countries').children.length,6);
   get('languages').children.find(node=>node.dataset.script==='cyrillic').click();
   assert.equal(get('country-picker').hidden,false);
+  get('setup-mic-check').click();
+  assert.equal(get('mic-check').hidden,false);
+  assert.equal(get('game').hidden,true);
+  assert.equal(get('check-continue').disabled,true);
+  get('check-speech').click();
+  const staleCheckRecognition=instances.at(-1);
+  staleCheckRecognition.emit('マイクのテストです');
+  assert.equal(get('check-transcript').textContent,'マイクのテストです');
+  assert.equal(get('check-continue').disabled,false);
+  get('check-continue').click();
+  assert.equal(get('setup').hidden,false);
+  assert.equal(get('game').hidden,true);
+  assert.equal(nodes.has('game-mic-check'),false);
   for(const lang of ['ukrainian','mongolian','bulgarian','kyrgyz','kazakh','russian']) {
     get('countries').children.find(node=>node.dataset.lang===lang).click();
     assert.equal(get('countries').children.filter(node=>node.attributes['aria-pressed']==='true').length,1);
     get('start').click();
+    assert.equal(get('game').hidden,false);
+    assert.equal(get('mic-check').hidden,true);
     for(let i=0;i<5;i++) {
       assert.equal(get('prompt').lang,LANGS[lang].code);
       const q=QUESTIONS.find(item=>item.lang===lang && item.kind==='regions' && item.prompt===get('prompt').textContent);
       assert.ok(q);
+      if(i===0) {
+        staleCheckRecognition.emit(q.answer);
+        assert.equal(get('feedback').hidden,true);
+      }
       if(i<3) {
         get('mic').click();
         if(i===0) {
@@ -72,4 +92,13 @@ test('実アプリを通して国選択・音声判定・成績・復習・地�
   assert.equal(get('country-picker').hidden,true);
   get('languages').children.find(node=>node.dataset.script==='cyrillic').click();
   assert.equal(get('countries').children.find(node=>node.dataset.lang==='russian').attributes['aria-pressed'],'true');
+  get('setup-mic-check').click();
+  get('check-speech').click();
+  const abandonedCheck=instances.at(-1);
+  document.hidden=true;documentEvents.get('visibilitychange')();document.hidden=false;
+  assert.match(get('check-status').textContent,/マイクを停止/);
+  abandonedCheck.emit('離脱後の結果');
+  assert.equal(get('check-transcript').textContent,'');
+  get('check-skip').click();
+  assert.equal(get('setup').hidden,false);
 });

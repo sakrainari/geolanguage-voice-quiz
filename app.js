@@ -2,6 +2,7 @@ import { QUESTIONS } from './data.js';
 import { judge, makeDeck, loadReview, saveReview } from './core.js';
 import { VoiceInput } from './speech.js';
 import { LANGS, SCRIPTS } from './catalog.js';
+import { MicCheck } from './mic-check.js';
 
 const $ = id => document.getElementById(id);
 const MODE_NAMES = { regions: '県・行政地域', cities: '代表的な都市', mixed: '地域優先ミックス' };
@@ -42,6 +43,41 @@ const voice = new VoiceInput({ Recognition,
     }
   }
 });
+
+const micCheck = new MicCheck({
+  mediaDevices: window.navigator?.mediaDevices,
+  AudioContext: window.AudioContext || window.webkitAudioContext,
+  Recognition,
+  requestFrame: callback => window.requestAnimationFrame(callback),
+  cancelFrame: frame => window.cancelAnimationFrame(frame),
+  onLevel: level => { $('check-level').value = level; },
+  onUpdate: state => {
+    $('check-permission').textContent = state.permission;
+    $('check-device').textContent = state.device;
+    $('check-signal').textContent = state.signal ? '反応あり' : '未確認';
+    $('check-recognized').textContent = state.recognized ? '認識結果あり' : '未確認';
+    $('check-status').textContent = state.status;
+    $('check-interim').textContent = state.interim ? `認識中：${state.interim}` : '';
+    $('check-result').hidden = !state.transcript;
+    $('check-transcript').textContent = state.transcript;
+    $('check-continue').disabled = !state.recognized;
+    $('check-input').textContent = ['level','requesting'].includes(state.mode) ? '入力の確認を止める' : 'マイクの許可と入力を確認';
+    $('check-speech').textContent = state.mode === 'recognition' ? '聞き取りを止める' : '日本語の聞き取りを試す';
+    $('check-speech').disabled = !supported;
+  }
+});
+
+function openMicCheck() {
+  showScreen('mic-check'); phase = 'mic-check';
+  micCheck.open();
+  if (!supported) $('check-status').textContent = 'この環境では日本語の音声認識を使えません。HTTPSのページをChromeで開いてください。';
+  $('mic-check').focus({ preventScroll: true });
+}
+function leaveMicCheck() {
+  if (phase !== 'mic-check') return;
+  micCheck.stop();
+  home();
+}
 
 function persist() {
   if (!saveReview(storage, review)) $('storage-warning').hidden = false;
@@ -94,7 +130,8 @@ function updateSetup() {
 }
 function showScreen(id) {
   voice.stop();
-  for (const screen of ['setup','game','results']) $(screen).hidden = screen !== id;
+  micCheck.stop();
+  for (const screen of ['setup','mic-check','game','results']) $(screen).hidden = screen !== id;
   window.scrollTo({ top: 0, behavior: 'instant' });
 }
 function start(isReview = false) {
@@ -177,6 +214,18 @@ $('start').addEventListener('click', () => start());
 $('review-start').addEventListener('click', () => start(true));
 $('result-review').addEventListener('click', () => start(true));
 $('again').addEventListener('click', () => start());
+$('setup-mic-check').addEventListener('click', openMicCheck);
+$('check-input').addEventListener('click', () => {
+  if (['level','requesting'].includes(micCheck.state.mode)) micCheck.stop('入力の確認を停止しました。もう一度確認できます。');
+  else micCheck.startLevel();
+});
+$('check-speech').addEventListener('click', () => {
+  if (micCheck.state.mode === 'recognition') micCheck.stop('聞き取りを停止しました。もう一度お試しください。');
+  else if (supported) micCheck.startRecognition();
+});
+$('check-continue').addEventListener('click', leaveMicCheck);
+$('check-skip').addEventListener('click', leaveMicCheck);
+$('check-back').addEventListener('click', leaveMicCheck);
 $('home').addEventListener('click', home); $('result-home').addEventListener('click', home);
 for (const id of ['mode','count']) $(id).addEventListener('change', () => { updateSetup(); saveSettings(); });
 $('mic').addEventListener('click', () => {
@@ -196,12 +245,13 @@ $('next').addEventListener('click', () => {
   index++; if (index >= deck.length) finish(); else nextQuestion();
 });
 document.addEventListener('visibilitychange', () => {
+  if (document.hidden && phase === 'mic-check') micCheck.stop('画面を離れたためマイクを停止しました。もう一度ボタンを押して確認できます。');
   if (document.hidden && phase === 'listening') {
     voice.stop(); phase = 'question'; $('voice-status').textContent = '画面を離れたため録音を停止しました。マイクを押して再開してください。';
     $('voice-dot').classList.remove('active'); $('mic-label').textContent = 'マイクで答える'; $('interim').textContent = '';
   }
 });
-window.addEventListener('pagehide', () => voice.stop());
+window.addEventListener('pagehide', () => { voice.stop(); micCheck.stop(); });
 if (!supported) {
   $('support').hidden = false;
   $('support').textContent = !window.isSecureContext ? '音声認識にはHTTPSまたはlocalhostで開いてください。' : 'このブラウザーでは音声認識を利用できません。Chromeで開いてください。';
