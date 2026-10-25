@@ -1,0 +1,75 @@
+// Integration test of the real app module with a small in-memory DOM and a
+// controllable speech service. This does not replace visual browser QA.
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { QUESTIONS } from '../data.js';
+import { LANGS } from '../catalog.js';
+
+test('実アプリを通して国選択・音声判定・成績・復習・地図リンクを検証', async () => {
+  class Element {
+    constructor() { this.children=[];this.dataset={};this.handlers={};this.attributes={};this.hidden=false;this.disabled=false;this.value='';this.textContent='';this.classList={toggle(){},remove(){}}; }
+    append(...nodes){this.children.push(...nodes);}
+    replaceChildren(...nodes){this.children=nodes;}
+    setAttribute(name,value){this.attributes[name]=value;}
+    addEventListener(name,handler){this.handlers[name]=handler;}
+    scrollIntoView(){} focus(){}
+    click(){assert.equal(this.disabled,false,'disabled button');this.handlers.click?.();}
+  }
+  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+  const nodes=new Map([...html.matchAll(/id="([^"]+)"/g)].map(match=>[match[1],new Element()]));
+  const get=id=>{assert.ok(nodes.has(id),`missing HTML element: ${id}`);return nodes.get(id);};
+  get('mode').value='regions';get('count').value='5';
+  const saved=new Map();
+  const instances=[];
+  class Recognition {
+    constructor(){instances.push(this);}
+    start(){this.onstart?.();}
+    abort(){this.onend?.();}
+    emit(text,isFinal=true){this.onresult({resultIndex:0,results:[Object.assign([{transcript:text}],{isFinal})]});}
+  }
+  globalThis.document={getElementById:get,createElement:()=>new Element(),addEventListener(){}};
+  globalThis.window={isSecureContext:true,SpeechRecognition:Recognition,localStorage:{getItem:key=>saved.get(key)??null,setItem:(key,value)=>saved.set(key,value)},scrollTo(){},addEventListener(){}};
+  await import('../app.js');
+  assert.equal(get('languages').children.length,4);
+  assert.equal(get('countries').children.length,6);
+  get('languages').children.find(node=>node.dataset.script==='cyrillic').click();
+  assert.equal(get('country-picker').hidden,false);
+  for(const lang of ['ukrainian','mongolian','bulgarian','kyrgyz','kazakh','russian']) {
+    get('countries').children.find(node=>node.dataset.lang===lang).click();
+    assert.equal(get('countries').children.filter(node=>node.attributes['aria-pressed']==='true').length,1);
+    get('start').click();
+    for(let i=0;i<5;i++) {
+      assert.equal(get('prompt').lang,LANGS[lang].code);
+      const q=QUESTIONS.find(item=>item.lang===lang && item.kind==='regions' && item.prompt===get('prompt').textContent);
+      assert.ok(q);
+      if(i<3) {
+        get('mic').click();
+        if(i===0) {
+          instances.at(-1).emit(q.answer,false);
+          assert.equal(get('feedback').hidden,true);
+          instances.at(-1).emit('東京');
+          assert.equal(get('feedback').hidden,true);
+          get('mic').click();
+        }
+        instances.at(-1).emit(q.aliases.at(-1));
+      } else if(i===3) get('skip').click();
+      else {get('reveal').click();get('rescue').click();}
+      assert.equal(get('feedback').hidden,false);
+      assert.equal(get('answer').textContent,q.answer);
+      assert.ok(decodeURIComponent(get('map').href).includes(LANGS[lang].mapCountry));
+      get('next').click();
+    }
+    assert.equal(get('results').hidden,false);
+    assert.deepEqual(get('stats').children.map(node=>node.children[0].textContent),['2 / 5','40%','1','1']);
+    assert.equal(get('result-list').children.length,5);
+    assert.equal(get('result-review').disabled,false);
+    get('result-review').click();
+    assert.ok(get('context').textContent.includes('復習'));
+    get('home').click();
+  }
+  get('languages').children.find(node=>node.dataset.script==='greek').click();
+  assert.equal(get('country-picker').hidden,true);
+  get('languages').children.find(node=>node.dataset.script==='cyrillic').click();
+  assert.equal(get('countries').children.find(node=>node.dataset.lang==='russian').attributes['aria-pressed'],'true');
+});

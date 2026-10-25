@@ -25,7 +25,7 @@ jobs:
       - name: Prepare static files
         run: |
           mkdir public
-          cp index.html style.css app.js core.js speech.js data.js manual.html spec.html public/
+          cp index.html style.css app.js core.js speech.js data.js data-cyrillic.js catalog.js manual.html spec.html public/
           touch public/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

@@ -1,10 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { QUESTIONS } from '../data.js';
+import { LANGS } from '../catalog.js';
 import { normalize, judge, makeDeck, loadReview, saveReview } from '../core.js';
 const find = prompt => QUESTIONS.find(q => q.prompt === prompt);
 test('教材の収録数、IDの一意性、全回答・別名を検証', () => {
-  assert.equal(QUESTIONS.length,329);
+  assert.equal(QUESTIONS.length,495);
   assert.equal(new Set(QUESTIONS.map(q=>q.id)).size, QUESTIONS.length);
   for (const q of QUESTIONS) {
     assert.ok(q.prompt && q.note && q.map && q.answer);
@@ -26,7 +27,7 @@ test('漢字・行政語尾・登録した慣用名', () => {
   assert.equal(judge(find('충청북도'),'忠清南道').ok,false);
 });
 test('各言語・各モードのデッキは無重複で要求数以内', () => {
-  for (const lang of ['thai','russian','greek','korean']) for (const mode of ['regions','cities','mixed']) for (const count of ['5','10','20','all']) {
+  for (const lang of Object.keys(LANGS)) for (const mode of ['regions','cities','mixed']) for (const count of ['5','10','20','all']) {
     const deck=makeDeck(QUESTIONS,{lang,mode,count});
     assert.ok(deck.length > 0);
     assert.equal(new Set(deck.map(q=>q.id)).size,deck.length);

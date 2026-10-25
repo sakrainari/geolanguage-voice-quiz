@@ -1,5 +1,6 @@
 /* Sources and coverage: SOURCES.md. Kana are learning approximations. */
-export const QUESTIONS = [
+import { CYRILLIC_QUESTIONS } from "./data-cyrillic.js";
+const BASE_QUESTIONS = [
   {
     "id": "thai-regions-กระบี่",
     "lang": "thai",
@@ -4547,3 +4548,4 @@ export const QUESTIONS = [
     "map": "안산"
   }
 ];
+export const QUESTIONS = [...BASE_QUESTIONS, ...CYRILLIC_QUESTIONS];

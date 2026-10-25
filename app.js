@@ -1,14 +1,9 @@
 import { QUESTIONS } from './data.js';
 import { judge, makeDeck, loadReview, saveReview } from './core.js';
 import { VoiceInput } from './speech.js';
+import { LANGS, SCRIPTS } from './catalog.js';
 
 const $ = id => document.getElementById(id);
-const LANGS = {
-  thai: { name: 'タイ語', native: 'ไทย', en: 'THAI', code: 'th' },
-  russian: { name: 'ロシア語', native: 'Россия', en: 'RUSSIAN', code: 'ru' },
-  greek: { name: 'ギリシャ語', native: 'Ελλάδα', en: 'GREEK', code: 'el' },
-  korean: { name: 'ハングル', native: '한국', en: 'KOREAN', code: 'ko' }
-};
 const MODE_NAMES = { regions: '県・行政地域', cities: '代表的な都市', mixed: '地域優先ミックス' };
 const STATUS = { correct: '一発正解', retry: '再挑戦で正解', self: '自己申告', revealed: '答えを確認', skipped: 'スキップ' };
 let storage;
@@ -61,20 +56,34 @@ try {
   if (saved && ['5','10','20','all'].includes(saved.count)) $('count').value = saved.count;
 } catch {}
 
-for (const [id, info] of Object.entries(LANGS)) {
+const lastCountry = { cyrillic: LANGS[lang].script === 'cyrillic' ? lang : 'russian' };
+function languageButton(id, info, key, choose) {
   const button = document.createElement('button');
   button.className = 'language';
-  button.dataset.lang = id;
-  button.setAttribute('aria-pressed', String(id === lang));
+  button.dataset[key] = id;
   const native = document.createElement('span'); native.className = 'native'; native.lang = info.code; native.textContent = info.native;
   const name = document.createElement('strong'); name.textContent = info.name;
   const en = document.createElement('small'); en.textContent = info.en;
   button.append(native, name, en);
-  button.addEventListener('click', () => { lang = id; updateSetup(); saveSettings(); });
-  $('languages').append(button);
+  button.addEventListener('click', choose);
+  return button;
+}
+for (const [id, info] of Object.entries(SCRIPTS)) {
+  $('languages').append(languageButton(id, info, 'script', () => {
+    lang = id === 'cyrillic' ? lastCountry.cyrillic : info.defaultLang;
+    updateSetup(); saveSettings();
+  }));
+}
+for (const [id, info] of Object.entries(LANGS).filter(([, value]) => value.script === 'cyrillic')) {
+  $('countries').append(languageButton(id, info, 'lang', () => {
+    lang = id; lastCountry.cyrillic = id; updateSetup(); saveSettings();
+  }));
 }
 function updateSetup() {
-  for (const button of $('languages').children) button.setAttribute('aria-pressed', String(button.dataset.lang === lang));
+  const script = LANGS[lang].script;
+  for (const button of $('languages').children) button.setAttribute('aria-pressed', String(button.dataset.script === script));
+  for (const button of $('countries').children) button.setAttribute('aria-pressed', String(button.dataset.lang === lang));
+  $('country-picker').hidden = script !== 'cyrillic';
   const regional = QUESTIONS.filter(q => q.lang === lang && q.kind === 'regions').length;
   const cities = QUESTIONS.filter(q => q.lang === lang && q.kind === 'cities').length;
   const eligible = QUESTIONS.filter(q => q.lang === lang && ($('mode').value === 'mixed' || q.kind === $('mode').value));
@@ -105,6 +114,7 @@ function nextQuestion() {
   $('progress').max = deck.length; $('progress').value = index;
   $('kind').textContent = q.kind === 'regions' ? 'REGION / 県・行政地域名' : 'CITY / 代表地名';
   $('prompt').textContent = q.prompt; $('prompt').lang = LANGS[lang].code;
+  $('prompt-guide').textContent = q.instruction || 'この地名を、日本語で読んでください';
   $('recognition').hidden = true; $('feedback').hidden = true;
   $('transcript').textContent = ''; $('extracted').textContent = ''; $('reason').textContent = '';
   $('interim').textContent = ''; $('voice-dot').classList.remove('active');
@@ -131,7 +141,7 @@ function complete(outcome) {
   $('rescue').hidden = !['revealed','skipped'].includes(outcome);
   $('rescue-note').hidden = true;
   $('next').textContent = index + 1 === deck.length ? '結果を見る →' : '次の問題へ →';
-  $('map').href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q.map + ', ' + {thai:'Thailand',russian:'Russia',greek:'Greece',korean:'South Korea'}[lang])}`;
+  $('map').href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q.map + ', ' + LANGS[lang].mapCountry)}`;
   $('feedback').classList.toggle('wrong', outcome !== 'correct');
   $('feedback').hidden = false;
   $('feedback').focus({ preventScroll: true });
