@@ -27,7 +27,7 @@ test('実アプリを通して国選択・音声判定・成績・復習・地�
     constructor(){instances.push(this);}
     start(){this.onstart?.();}
     abort(){this.onend?.();}
-    emit(text,isFinal=true){this.onresult({resultIndex:0,results:[Object.assign([{transcript:text}],{isFinal})]});}
+    emit(text,isFinal=true){const candidates=Array.isArray(text)?text:[text];this.onresult({resultIndex:0,results:[Object.assign(candidates.map(transcript=>({transcript})),{isFinal})]});}
   }
   const documentEvents=new Map();
   globalThis.document={getElementById:get,createElement:()=>new Element(),addEventListener:(name,handler)=>documentEvents.set(name,handler)};
@@ -124,13 +124,16 @@ test('実アプリを通して国選択・音声判定・成績・復習・地�
   skips=0;
   while(get('prompt').textContent!=='제주' && skips++<18) {get('skip').click();get('next').click();}
   assert.equal(get('prompt').textContent,'제주');
-  get('mic').click();instances.at(-1).emit('チェジュ');
+  get('mic').click();instances.at(-1).emit(['東京','えー、チエジユかな']);
   assert.equal(get('feedback').hidden,false);
+  assert.equal(get('transcript').textContent,'東京 ／ えー、チエジユかな');
+  assert.equal(get('extracted').textContent,'チエジユ');
+  assert.match(get('reason').textContent,/第2候補/);
   assert.ok(get('note').textContent.includes('제주특별자치도'));
   get('home').click();
 
   get('setup-mic-check').click();get('check-speech').click();
-  instances.at(-1).emit('ランプ');
-  assert.equal(get('check-transcript').textContent,'ランプ');
+  instances.at(-1).emit(['ランプ','ランプン']);
+  assert.equal(get('check-transcript').textContent,'ランプ ／ ランプン');
   get('check-skip').click();
 });

@@ -1,8 +1,8 @@
-import { QUESTIONS } from './data.js?v=1.3.0';
-import { displayPrompt, judge, makeDeck, loadReview, saveReview } from './core.js?v=1.3.0';
-import { VoiceInput } from './speech.js';
+import { QUESTIONS } from './data.js?v=1.4.0';
+import { displayPrompt, judge, makeDeck, loadReview, saveReview } from './core.js?v=1.4.0';
+import { VoiceInput } from './speech.js?v=1.4.0';
 import { LANGS, SCRIPTS } from './catalog.js';
-import { MicCheck } from './mic-check.js';
+import { MicCheck } from './mic-check.js?v=1.4.0';
 
 const $ = id => document.getElementById(id);
 const MODE_NAMES = { regions: '県・行政地域', cities: '代表的な都市', mixed: '地域優先ミックス' };
@@ -23,15 +23,15 @@ const voice = new VoiceInput({ Recognition,
     $('mic-label').textContent = active ? '録音をやめる' : 'マイクで答える';
   },
   onInterim: text => { $('interim').textContent = text ? `認識中：${text}` : ''; },
-  onFinal: transcript => {
+  onFinal: candidates => {
     if (phase !== 'listening') return;
     phase = 'question';
     $('voice-dot').classList.remove('active');
     $('mic-label').textContent = 'もう一度、声で答える';
     $('interim').textContent = '';
-    const result = judge(deck[index], transcript);
+    const result = judge(deck[index], candidates);
     $('recognition').hidden = false;
-    $('transcript').textContent = result.transcript;
+    $('transcript').textContent = candidates.join(' ／ ');
     $('extracted').textContent = result.extracted;
     $('reason').textContent = result.reason;
     if (result.ok) complete(attempts ? 'retry' : 'correct');

@@ -57,6 +57,16 @@ test('音量測定を止めてから音声認識を開始し、確定結果だ�
   f.check.open();f.instances[0].emit('古い結果');assert.equal(f.check.state.transcript,'');
 });
 
+test('マイク確認では候補を補正せず、候補順に表示する',()=>{
+  const f=fixture();f.check.startRecognition();
+  assert.equal(f.instances[0].maxAlternatives,5);
+  f.instances[0].onresult({resultIndex:0,results:[Object.assign([{transcript:'ランプ'},{transcript:'ランプン'}],{isFinal:true})]});
+  assert.equal(f.check.state.transcript,'ランプ ／ ランプン');
+  assert.equal(f.check.state.recognized,true);
+  assert.equal(f.check.state.mode,'idle');
+  assert.equal(f.check.voice.active,null);
+});
+
 test('入力許可の拒否・マイク不在・機器使用中を区別して案内',async()=>{
   for(const [name,pattern] of [['NotAllowedError',/許可/],['NotFoundError',/見つかりません/],['NotReadableError',/開けません/]]) {
     const f=fixture({mediaDevices:{getUserMedia:async()=>{throw Object.assign(new Error(),{name});}}});

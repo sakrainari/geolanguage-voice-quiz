@@ -1,13 +1,18 @@
+const voicedKana = { 'ゔぁ': 'ば', 'ゔぃ': 'び', 'ゔ': 'ぶ', 'ゔぇ': 'べ', 'ゔぉ': 'ぼ' };
+const smallKana = { 'ゃ': 'や', 'ゅ': 'ゆ', 'ょ': 'よ', 'ぁ': 'あ', 'ぃ': 'い', 'ぅ': 'う', 'ぇ': 'え', 'ぉ': 'お' };
+
 export function normalize(text) {
   return String(text ?? '').normalize('NFKC').toLowerCase()
     .replace(/[ァ-ヶ]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60))
-    .replace(/[\s・･、。,.!！?？「」『』()（）\-‐‑–—]/gu, '');
+    .replace(/ゔ[ぁぃぇぉ]?/gu, c => voicedKana[c])
+    .replace(/[ゃゅょぁぃぅぇぉ]/gu, c => smallKana[c])
+    .replace(/[ー\s・･、。,.!！?？「」『』()（）\-‐‑–—]/gu, '');
 }
 
 export function extract(text) {
   return String(text ?? '').normalize('NFKC').trim()
-    .replace(/^(?:(?:えっとね|えっと|えーと)[、,\s]*)?(?:答えは|こたえは)?[、,\s]*/u, '')
-    .replace(/(?:だと思います|です)[。.!！\s]*$/u, '').trim();
+    .replace(/^(?:(?:えっとね|えっと|えーと|あのー|あの|うーん|えー|んー)[、,\s]*)*(?:答えは|こたえは)?[、,\s]*/u, '')
+    .replace(/(?:だと思います|だと思う|です|かな)[。.!！?？\s]*$/u, '').trim();
 }
 
 // Shorten only known administrative labels for the question's own language.
@@ -43,17 +48,29 @@ export function acceptedAnswers(question) {
   return new Set(names.map(normalize).filter(Boolean));
 }
 
-export function judge(question, transcript) {
-  const extracted = extract(transcript);
+export function judge(question, input) {
+  const candidates = Array.isArray(input) ? input : [input];
   const accepted = acceptedAnswers(question);
-  const ok = accepted.has(normalize(transcript)) || accepted.has(normalize(extracted));
-  if (!ok) {
-    const correction = (question.recognitionCorrections || []).find(item =>
-      normalize(item.from) === normalize(extracted) && accepted.has(normalize(item.to)));
-    if (correction) return { ok: true, transcript, extracted: correction.to,
-      reason: `登録済みの音声認識補正：「${extracted}」→「${correction.to}」で判定しました。` };
+  let firstFailure;
+  for (const [index, candidate] of candidates.entries()) {
+    if (typeof candidate !== 'string' || !candidate.trim()) continue;
+    const transcript = candidate.trim();
+    const extracted = extract(transcript);
+    const ok = accepted.has(normalize(transcript)) || accepted.has(normalize(extracted));
+    let result = { ok, transcript, extracted, reason: ok ? '登録された読み・別名と一致しました。' : '登録された読み・別名と一致しませんでした。聞き取り違いなら再挑戦できます。' };
+    if (!ok) {
+      const correction = (question.recognitionCorrections || []).find(item =>
+        normalize(item.from) === normalize(extracted) && accepted.has(normalize(item.to)));
+      if (correction) result = { ok: true, transcript, extracted: correction.to,
+        reason: `登録済みの音声認識補正：「${extracted}」→「${correction.to}」で判定しました。` };
+    }
+    if (result.ok) {
+      if (index > 0) result.reason += ` 音声認識の第${index + 1}候補で判定しました。`;
+      return result;
+    }
+    firstFailure ??= result;
   }
-  return { ok, transcript, extracted, reason: ok ? '登録された読み・別名と一致しました。' : '登録された読み・別名と一致しませんでした。聞き取り違いなら再挑戦できます。' };
+  return firstFailure || { ok: false, transcript: '', extracted: '', reason: '音声認識の候補を受け取れませんでした。もう一度マイクを押してください。' };
 }
 
 export function shuffle(items, random = Math.random) {

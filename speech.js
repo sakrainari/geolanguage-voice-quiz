@@ -16,6 +16,7 @@ export class VoiceInput {
   stop() {
     this.generation++;
     clearTimeout(this.timer);
+    this.timer = null;
     const active = this.active;
     this.active = null;
     if (active) { try { active.abort(); } catch {} }
@@ -30,19 +31,30 @@ export class VoiceInput {
     recognition.lang = 'ja-JP';
     recognition.interimResults = true;
     recognition.continuous = false;
-    recognition.maxAlternatives = 1;
+    recognition.maxAlternatives = 5;
     const current = () => generation === this.generation && this.active === recognition;
-    recognition.onstart = () => { if (current()) this.onStatus(this.listeningMessage, true); };
+    recognition.onstart = () => {
+      if (!current()) return;
+      clearTimeout(this.timer);
+      this.timer = setTimeout(() => {
+        if (!current()) return;
+        this.stop();
+        this.onStatus('録音を終了しました。回答を確定できなかったため、もう一度お試しください。', false);
+      }, this.timeoutMs);
+      this.onStatus(this.listeningMessage, true);
+    };
     recognition.onresult = event => {
       if (!current()) return;
       let interim = '';
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i];
-        if (result.isFinal && result[0]?.transcript.trim()) {
-          const transcript = result[0].transcript.trim();
-          this.stop();
-          this.onFinal(transcript);
-          return;
+        if (result.isFinal) {
+          const candidates = Array.from(result, alternative => alternative?.transcript?.trim()).filter(Boolean);
+          if (candidates.length) {
+            this.stop();
+            this.onFinal(candidates);
+            return;
+          }
         }
         if (!result.isFinal) interim += result[0]?.transcript || '';
       }
@@ -61,11 +73,6 @@ export class VoiceInput {
     this.onStatus('マイクを準備しています… 許可の案内が出たら確認してください。', true);
     try {
       recognition.start();
-      this.timer = setTimeout(() => {
-        if (!current()) return;
-        this.stop();
-        this.onStatus('録音を終了しました。回答を確定できなかったため、もう一度お試しください。', false);
-      }, this.timeoutMs);
     } catch {
       this.stop();
       this.onStatus('音声認識を開始できませんでした。もう一度マイクを押してください。', false);

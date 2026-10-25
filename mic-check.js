@@ -1,4 +1,4 @@
-import { VoiceInput } from './speech.js';
+import { VoiceInput } from './speech.js?v=1.4.0';
 
 const captureErrors = {
   NotAllowedError: 'マイクの使用が許可されていません。アドレスバーのサイト設定でマイクを許可し、もう一度お試しください。',
@@ -16,7 +16,7 @@ export class MicCheck {
       listeningMessage: '聞いています。「マイクのテストです」と話してください。',
       onStatus: (status, active) => this.update({ status, mode: active ? 'recognition' : 'idle' }),
       onInterim: interim => this.update({ interim }),
-      onFinal: transcript => this.update({ transcript, interim: '', recognized: true, mode: 'idle',
+      onFinal: candidates => this.update({ transcript: candidates.join(' ／ '), interim: '', recognized: true, mode: 'idle',
         status: '認識結果を受け取りました。話した内容と合っているか確認してください。' })
     });
   }
