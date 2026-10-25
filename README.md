@@ -4,6 +4,10 @@
 
 元の [GeoLanguage Quiz](https://github.com/sakrainari/geolanguage-quiz) とは独立した、ビルド不要の静的Webアプリです。
 
+公開サイト: **https://sakrainari.github.io/geolanguage-voice-quiz/**
+
+Chromeで開き、「文字体系 → 国 → 練習内容」を選んで始めてください。音声認識にはマイクの許可が必要です。[使い方](https://sakrainari.github.io/geolanguage-voice-quiz/manual.html)
+
 ## 教材
 
 | 言語 | 県・行政地域 | 代表都市 | 合計 |
@@ -58,7 +62,7 @@ npm test
 
 `.github/workflows/pages.yml` はmainへのpush時にテストし、公開用ファイルだけをPagesへ配置します。GitHubの Settings → Pages → Source で GitHub Actions を選んで使います。
 
-この作業の時点ではGitHubへのブラウザーアクセスが拒否されたため、新リポジトリの作成・push・Pages公開は未実施です。ローカル完成版を確認してから公開できます。
+公開用リポジトリは `sakrainari/geolanguage-voice-quiz`、PagesのSourceはGitHub Actionsです。デプロイの状態は [Actions](https://github.com/sakrainari/geolanguage-voice-quiz/actions) で確認できます。
 
 ## ファイル
 
