@@ -1,5 +1,5 @@
-import { QUESTIONS } from './data.js';
-import { judge, makeDeck, loadReview, saveReview } from './core.js';
+import { QUESTIONS } from './data.js?v=1.3.0';
+import { displayPrompt, judge, makeDeck, loadReview, saveReview } from './core.js?v=1.3.0';
 import { VoiceInput } from './speech.js';
 import { LANGS, SCRIPTS } from './catalog.js';
 import { MicCheck } from './mic-check.js';
@@ -150,7 +150,8 @@ function nextQuestion() {
   $('progress-label').textContent = `${index + 1} / ${deck.length}`;
   $('progress').max = deck.length; $('progress').value = index;
   $('kind').textContent = q.kind === 'regions' ? 'REGION / 県・行政地域名' : 'CITY / 代表地名';
-  $('prompt').textContent = q.prompt; $('prompt').lang = LANGS[lang].code;
+  $('prompt').textContent = displayPrompt(q); $('prompt').lang = LANGS[lang].code;
+  $('prompt').dataset.questionId = q.id;
   $('prompt-guide').textContent = q.instruction || 'この地名を、日本語で読んでください';
   $('recognition').hidden = true; $('feedback').hidden = true;
   $('transcript').textContent = ''; $('extracted').textContent = ''; $('reason').textContent = '';
@@ -173,7 +174,7 @@ function complete(outcome) {
   $('voice-status').textContent = STATUS[outcome];
   $('verdict').textContent = outcome === 'correct' ? 'CORRECT / 正解' : STATUS[outcome];
   $('answer').textContent = q.answer;
-  $('note').textContent = q.note;
+  $('note').textContent = displayPrompt(q) === q.prompt ? q.note : `${q.prompt} — ${q.note}`;
   $('aliases').textContent = `登録されている読み：${q.aliases.join(' ／ ')}`;
   $('rescue').hidden = !['revealed','skipped'].includes(outcome);
   $('rescue-note').hidden = true;
@@ -200,7 +201,7 @@ function finish() {
   $('result-list').replaceChildren();
   for (const { question: q, outcome } of records) {
     const row = document.createElement('div'); row.className = 'result-item';
-    const prompt = document.createElement('strong'); prompt.textContent = q.prompt; prompt.lang = LANGS[q.lang].code;
+    const prompt = document.createElement('strong'); prompt.textContent = displayPrompt(q); prompt.lang = LANGS[q.lang].code;
     const answer = document.createElement('span'); answer.textContent = q.answer;
     const status = document.createElement('small'); status.textContent = STATUS[outcome];
     row.append(prompt,answer,status); $('result-list').append(row);

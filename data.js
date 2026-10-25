@@ -714,10 +714,18 @@ const BASE_QUESTIONS = [
     "answer": "ランプーン",
     "aliases": [
       "ランプーン",
-      "ランプーン県"
+      "ランプーン県",
+      "ランプン",
+      "ランプン県"
     ],
     "note": "北部の都県。日本語の地名で答えます。",
-    "map": "Lamphun, Thailand"
+    "map": "Lamphun, Thailand",
+    "recognitionCorrections": [
+      {
+        "from": "ランプ",
+        "to": "ランプーン"
+      }
+    ]
   },
   {
     "id": "thai-regions-เลย",
@@ -4096,6 +4104,7 @@ const BASE_QUESTIONS = [
     "answer": "チュンチョンブクド",
     "aliases": [
       "チュンチョンブクド",
+      "チュンチョンブク",
       "忠清北道",
       "チュンチョン北道",
       "チュンブク"
@@ -4111,6 +4120,7 @@ const BASE_QUESTIONS = [
     "answer": "チュンチョンナムド",
     "aliases": [
       "チュンチョンナムド",
+      "チュンチョンナム",
       "忠清南道",
       "チュンチョン南道",
       "チュンナム"
@@ -4161,6 +4171,7 @@ const BASE_QUESTIONS = [
     "answer": "キョンサンブクド",
     "aliases": [
       "キョンサンブクド",
+      "キョンサンブク",
       "慶尚北道",
       "キョンサン北道",
       "キョンブク"
@@ -4176,6 +4187,7 @@ const BASE_QUESTIONS = [
     "answer": "キョンサンナムド",
     "aliases": [
       "キョンサンナムド",
+      "キョンサンナム",
       "慶尚南道",
       "キョンサン南道",
       "キョンナム"
@@ -4208,6 +4220,8 @@ const BASE_QUESTIONS = [
     "answer": "チョルラナムド",
     "aliases": [
       "チョルラナムド",
+      "チョルラナム",
+      "チョンラナム",
       "チョンラナムド",
       "全羅南道",
       "チョンナム"

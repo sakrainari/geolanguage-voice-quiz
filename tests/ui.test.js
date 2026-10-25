@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { QUESTIONS } from '../data.js';
 import { LANGS } from '../catalog.js';
+import { displayPrompt } from '../core.js';
 
 test('実アプリを通して国選択・音声判定・成績・復習・地図リンクを検証', async () => {
   class Element {
@@ -57,8 +58,10 @@ test('実アプリを通して国選択・音声判定・成績・復習・地�
     assert.equal(get('mic-check').hidden,true);
     for(let i=0;i<5;i++) {
       assert.equal(get('prompt').lang,LANGS[lang].code);
-      const q=QUESTIONS.find(item=>item.lang===lang && item.kind==='regions' && item.prompt===get('prompt').textContent);
+      const q=QUESTIONS.find(item=>item.id===get('prompt').dataset.questionId);
       assert.ok(q);
+      assert.equal(q.lang,lang);
+      assert.equal(get('prompt').textContent,displayPrompt(q));
       if(i===0) {
         staleCheckRecognition.emit(q.answer);
         assert.equal(get('feedback').hidden,true);
@@ -77,6 +80,7 @@ test('実アプリを通して国選択・音声判定・成績・復習・地�
       else {get('reveal').click();get('rescue').click();}
       assert.equal(get('feedback').hidden,false);
       assert.equal(get('answer').textContent,q.answer);
+      if(displayPrompt(q)!==q.prompt) assert.ok(get('note').textContent.includes(q.prompt));
       assert.ok(decodeURIComponent(get('map').href).includes(LANGS[lang].mapCountry));
       get('next').click();
     }
@@ -101,4 +105,32 @@ test('実アプリを通して国選択・音声判定・成績・復習・地�
   assert.equal(get('check-transcript').textContent,'');
   get('check-skip').click();
   assert.equal(get('setup').hidden,false);
+
+  get('languages').children.find(node=>node.dataset.script==='thai').click();
+  get('count').value='all';get('start').click();
+  let skips=0;
+  while(get('prompt').textContent!=='ลำพูน' && skips++<77) {get('skip').click();get('next').click();}
+  assert.equal(get('prompt').textContent,'ลำพูน');
+  get('mic').click();instances.at(-1).emit('ランプ');
+  assert.equal(get('feedback').hidden,false);
+  assert.equal(get('transcript').textContent,'ランプ');
+  assert.equal(get('extracted').textContent,'ランプーン');
+  assert.match(get('reason').textContent,/補正/);
+  assert.equal(get('answer').textContent,'ランプーン');
+  get('home').click();
+
+  get('languages').children.find(node=>node.dataset.script==='korean').click();
+  get('start').click();
+  skips=0;
+  while(get('prompt').textContent!=='제주' && skips++<18) {get('skip').click();get('next').click();}
+  assert.equal(get('prompt').textContent,'제주');
+  get('mic').click();instances.at(-1).emit('チェジュ');
+  assert.equal(get('feedback').hidden,false);
+  assert.ok(get('note').textContent.includes('제주특별자치도'));
+  get('home').click();
+
+  get('setup-mic-check').click();get('check-speech').click();
+  instances.at(-1).emit('ランプ');
+  assert.equal(get('check-transcript').textContent,'ランプ');
+  get('check-skip').click();
 });

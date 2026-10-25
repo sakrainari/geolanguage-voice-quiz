@@ -10,6 +10,23 @@ export function extract(text) {
     .replace(/(?:だと思います|です)[。.!！\s]*$/u, '').trim();
 }
 
+// Shorten only known administrative labels for the question's own language.
+// Keep the original prompt and ID so notes, maps and saved review IDs stay valid.
+const administrativeLabels = {
+  korean: /(?:통합특별시|특별자치도|특별자치시|광역시|특별시|도|시)$/u,
+  russian: /^(?:Республика\s+)|\s+(?:автономная область|автономный округ|область|край)$/u,
+  ukrainian: /^(?:Автономна Республіка\s+)|\s+область$/u,
+  mongolian: /\s+аймаг$/u,
+  bulgarian: /^Област\s+|\s+област$/u,
+  kyrgyz: /\s+(?:облусу|шаары)$/u,
+  kazakh: /\s+(?:облысы|қаласы)$/u
+};
+
+export function displayPrompt(question) {
+  const label = question.kind === 'regions' && administrativeLabels[question.lang];
+  return label ? question.prompt.replace(label, '').trim() || question.prompt : question.prompt;
+}
+
 const spokenSuffixes = [
   ['統合特別市','とうごうとくべつし'],['特別自治道','とくべつじちどう'],
   ['特別自治市','とくべつじちし'],['広域市','こういきし'],['特別市','とくべつし'],
@@ -30,6 +47,12 @@ export function judge(question, transcript) {
   const extracted = extract(transcript);
   const accepted = acceptedAnswers(question);
   const ok = accepted.has(normalize(transcript)) || accepted.has(normalize(extracted));
+  if (!ok) {
+    const correction = (question.recognitionCorrections || []).find(item =>
+      normalize(item.from) === normalize(extracted) && accepted.has(normalize(item.to)));
+    if (correction) return { ok: true, transcript, extracted: correction.to,
+      reason: `登録済みの音声認識補正：「${extracted}」→「${correction.to}」で判定しました。` };
+  }
   return { ok, transcript, extracted, reason: ok ? '登録された読み・別名と一致しました。' : '登録された読み・別名と一致しませんでした。聞き取り違いなら再挑戦できます。' };
 }
 
