@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="タイ・ロシア・ギリシャ・韓国の県名や代表地名を、日本語の声で読もう。GeoGuessr向け音声回答トレーナー。">
+  <meta name="theme-color" content="#254f42"><title>GeoLanguage Voice Quiz — 声で読む、世界の地名</title>
+  <link rel="stylesheet" href="style.css"><script type="module" src="app.js"></script>
+</head>
+<body>
+<div class="shell">
+  <header><a class="brand" href="./" aria-label="GeoLanguage Voice Quiz ホーム"><span class="brand-icon" aria-hidden="true">◎</span><span>GeoLanguage <b>Voice Quiz</b></span></a><span class="edition">地名を、声で読む。</span></header>
+  <main>
+    <div id="support" class="notice" role="status" hidden></div>
+    <div id="storage-warning" class="notice" role="status" hidden>このブラウザーでは復習データを保存できません。この画面を閉じるまでは練習できます。</div>
+    <section id="setup">
+      <div class="hero"><div><p class="eyebrow">LOOK. READ. SAY IT.</p><h1>その看板、<br><em>声で読める？</em></h1><p class="lead">県名から、世界がわかる。<br>外国の地名を見て、日本語の読みで答えよう。</p></div><div class="world-type" aria-hidden="true"><span>เชียงใหม่</span><span>Πιερία</span><span>경기도</span><span>Иркутская</span><small>THAI · RUSSIAN · GREEK · KOREAN</small></div></div>
+      <div class="setup-card"><div class="step-title"><span>01</span><h2>どこの地名を読む？</h2></div>
+        <div id="languages" class="languages" role="group" aria-label="言語"></div>
+        <div class="step-title spaced"><span>02</span><h2>練習を選ぶ</h2></div>
+        <div class="settings"><label>出題内容<select id="mode"><option value="regions">県・行政地域名を読む</option><option value="cities">代表的な都市名を読む</option><option value="mixed">地域優先ミックス</option></select></label><label>問題数<select id="count"><option value="5">5問</option><option value="10" selected>10問</option><option value="20">20問</option><option value="all">全問</option></select></label></div>
+        <p id="coverage" class="muted"></p><div class="start-row"><button id="start" class="primary">地名を読む練習をはじめる <span aria-hidden="true">↗</span></button><button id="review-start" class="secondary">苦手な地名を復習</button></div>
+        <p id="review-stock" class="muted"></p>
+      </div>
+      <div class="how"><div><b>01 / 見る</b><p>県や都市の現地表記が出題。</p></div><div><b>02 / 声で答える</b><p>マイクを押して、日本語の地名を。</p></div><div><b>03 / 身につける</b><p>間違えた地名は、あとで復習。</p></div></div>
+      <details class="info"><summary>表記ゆれ・音声認識について</summary><p>「ピエリア」「ぴえりあ」、空白や中黒は同じ答えとして扱います。「釜山」「プサン」などの漢字・別名や、県・州などの省略は問題ごとの登録で対応します。似た音や長音を一律に同じにせず、登録した読みと完全一致で判定します。</p><p>Chromeを想定しています。音声認識にはネット接続とマイクの許可が必要です。音声がブラウザー提供元の認識サービスに送信される場合があります。このアプリは音声や認識全文を保存しません。聞き取り違いは再挑戦できます。</p><p>行政区分の名称・範囲は国ごとに異なります。旧称を含む問題には説明を付けています。日本語の読みは学習用のカナ表記です。</p></details>
+    </section>
+    <section id="game" hidden aria-labelledby="question-heading">
+      <div class="game-top"><button id="home" class="text-button">← 設定へ</button><span id="context" class="pill"></span><span id="progress-label"></span></div>
+      <progress id="progress" value="0" max="10" aria-label="問題の進捗"></progress>
+      <div class="question-card"><p id="kind" class="eyebrow"></p><h1 id="question-heading" class="sr-only">表示された地名の日本語の読みを答えてください</h1><div id="prompt" class="prompt" lang="th"></div><p class="prompt-guide">この地名を、日本語で読んでください</p></div>
+      <div class="voice-card"><div class="voice-line"><span id="voice-dot" class="voice-dot" aria-hidden="true"></span><p id="voice-status" role="status" aria-live="polite">準備できたらマイクを押してください。</p></div><p id="interim" class="interim" aria-live="off"></p>
+        <button id="mic" class="primary mic"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8"/></svg><span id="mic-label">マイクで答える</span></button>
+        <div id="recognition" class="recognition" hidden><dl><div><dt>聞き取った言葉</dt><dd id="transcript"></dd></div><div><dt>判定する回答</dt><dd id="extracted"></dd></div></dl><p id="reason" role="status"></p></div>
+        <div class="question-actions"><button id="reveal" class="text-button">答えを見る</button><button id="skip" class="text-button">スキップ</button></div>
+      </div>
+      <div id="feedback" class="feedback" hidden tabindex="-1"><p id="verdict" class="eyebrow"></p><h2 id="answer"></h2><p id="note"></p><p id="aliases" class="muted"></p><div class="feedback-actions"><button id="next" class="primary">次の問題へ →</button><button id="rescue" class="secondary">読めていた（自己申告）</button><a id="map" class="text-button" target="_blank" rel="noopener noreferrer">地図で確認 ↗</a></div><p id="rescue-note" class="muted" hidden>自己申告として記録しました。自動正解の点数には含めません。</p></div>
+    </section>
+    <section id="results" hidden tabindex="-1"><p class="eyebrow">SESSION COMPLETE</p><h1>読める地名が、<br>また増えた。</h1><p id="result-context" class="muted"></p><div id="stats" class="stats"></div><p class="muted">再挑戦・自己申告・答えを見た問題は、復習に残ります。</p><div class="start-row"><button id="again" class="primary">同じ設定でもう一度</button><button id="result-review" class="secondary">苦手な地名を復習</button><button id="result-home" class="text-button">設定へ戻る</button></div><div id="result-list" class="result-list"></div></section>
+  </main>
+  <footer><span>声で読む、世界の地名。</span><nav><a href="manual.html">使い方</a><a href="spec.html">仕様</a><a href="https://github.com/sakrainari/geolanguage-voice-quiz">GitHub</a><a href="https://github.com/sakrainari/geolanguage-quiz">元のゲーム ↗</a></nav></footer>
+</div>
+</body></html>
